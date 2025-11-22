@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import tinycolor from 'tinycolor2';
 
 export default function ColorMenu({ 
-  open, onClose, currentPalette, onApply, onSave, 
+  open, onClose, currentPalette, onApply, onSave, onReset,
   sphereY, setSphereY, sphereScale, setSphereScale,
   rotationEnabled, setRotationEnabled, rotationSpeedX, setRotationSpeedX, rotationSpeedY, setRotationSpeedY,
   clockY, setClockY, clockScale, setClockScale, clockColor, setClockColor, clockHolographic, setClockHolographic,
-  showSeconds, setShowSeconds
+  sphereShader, setSphereShader
 }){
   const [base, setBase] = useState('#2b6ef6');
   const [palette, setPalette] = useState({});
@@ -58,7 +58,10 @@ export default function ColorMenu({
 
   const handleRandom = () => {
     const randomColor = tinycolor.random().toHexString();
-    handleBaseChange(randomColor);
+    const newPalette = generatePalette(randomColor);
+    setBase(randomColor);
+    setPalette(newPalette);
+    onApply(newPalette);
   };
 
   if(!open) return null;
@@ -128,6 +131,27 @@ export default function ColorMenu({
       </div>
 
       <div style={{marginBottom:20}}>
+        <label style={{fontSize:12, color:'#888', display:'block', marginBottom:8, textTransform:'uppercase', letterSpacing:1}}>Style</label>
+        <div style={{display:'flex', gap:10, background:'rgba(255,255,255,0.05)', padding:4, borderRadius:8, flexWrap: 'wrap'}}>
+          {['fluid', 'wave'].map(mode => (
+            <button
+              key={mode}
+              onClick={() => setSphereShader(mode)}
+              style={{
+                flex: '1 0 20%', padding:'6px 0', border:'none', borderRadius:6,
+                background: sphereShader === mode ? base : 'transparent',
+                color: sphereShader === mode ? '#fff' : '#aaa',
+                cursor:'pointer', fontSize:12, textTransform:'capitalize',
+                transition: 'all 0.2s'
+              }}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom:20}}>
         <label style={{fontSize:12, color:'#888', display:'block', marginBottom:8, textTransform:'uppercase', letterSpacing:1}}>Geometry</label>
         <div style={{marginBottom:12}}>
           <div style={{display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:4}}>
@@ -183,23 +207,8 @@ export default function ColorMenu({
             />
           </div>
         </div>
-        <div style={{marginTop:12, display:'flex', alignItems:'center', gap:10}}>
-          <input 
-            type="checkbox" 
-            checked={clockHolographic} 
-            onChange={e=>setClockHolographic(e.target.checked)}
-            style={{width:16, height:16, accentColor: base}}
-          />
-          <span style={{fontSize:13}}>Holographic Glow</span>
-        </div>
         <div style={{marginTop:8, display:'flex', alignItems:'center', gap:10}}>
-          <input 
-            type="checkbox" 
-            checked={showSeconds} 
-            onChange={e=>setShowSeconds(e.target.checked)}
-            style={{width:16, height:16, accentColor: base}}
-          />
-          <span style={{fontSize:13}}>Show Seconds</span>
+          {/* Removed Show Seconds */}
         </div>
       </div>
 
@@ -269,6 +278,19 @@ export default function ColorMenu({
           }}
         >
           Save
+        </button>
+      </div>
+      <div style={{marginTop: 8}}>
+        <button 
+          onClick={onReset} 
+          style={{
+            width: '100%', padding:8, borderRadius:8, 
+            background: 'transparent', color: '#aaa',
+            fontWeight:500, cursor:'pointer', fontSize:12,
+            border: '1px solid #333'
+          }}
+        >
+          Revert to Default
         </button>
       </div>
     </div>

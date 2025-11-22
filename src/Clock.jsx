@@ -1,8 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Text } from '@react-three/drei';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Text3D, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
-const Clock = ({ y = 1.6, scale = 2.2, color = "white", holographic = true, showSeconds = false }) => {
+const vertexShader = `
+varying vec3 vPosition;
+void main() {
+  vPosition = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+const fragmentShader = `
+uniform vec3 uColor;
+uniform float uAlphaTop;
+uniform float uAlphaBottom;
+uniform float uGradientMin;
+uniform float uGradientMax;
+varying vec3 vPosition;
+
+void main() {
+  // Vertical gradient based on Y position
+  // Text size is 0.35, centered around 0
+  float t = smoothstep(uGradientMin, uGradientMax, vPosition.y);
+  
+  // Fade from transparent at bottom to opaque at top
+  float alpha = mix(uAlphaBottom, uAlphaTop, t);
+  
+  gl_FragColor = vec4(uColor, alpha);
+}
+`;
+
+const Clock = ({ 
+  y = 1.6, scale = 2.2, color = "white", 
+  alphaTop = 1.0, alphaBottom = 0.2,
+  gradientMin = -0.2, gradientMax = 0.2 
+}) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -12,45 +44,56 @@ const Clock = ({ y = 1.6, scale = 2.2, color = "white", holographic = true, show
 
   const hours = time.getHours().toString().padStart(2, '0');
   const minutes = time.getMinutes().toString().padStart(2, '0');
-  const seconds = time.getSeconds().toString().padStart(2, '0');
-  const timeString = showSeconds ? `${hours}:${minutes}:${seconds}` : `${hours}:${minutes}`;
+  const timeString = `${hours}:${minutes}`;
 
-  // Slightly higher and behind the sphere so it gets partially occluded
-  const pos = [0, y, -2.6];
+  // Position adjusted for 3D text
+  const pos = [0, y, -2.0];
+
+  const materialRef = React.useRef();
+
+  useEffect(() => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.uColor.value.set(color);
+      materialRef.current.uniforms.uAlphaTop.value = alphaTop;
+      materialRef.current.uniforms.uAlphaBottom.value = alphaBottom;
+      materialRef.current.uniforms.uGradientMin.value = gradientMin;
+      materialRef.current.uniforms.uGradientMax.value = gradientMax;
+    }
+  }, [color, alphaTop, alphaBottom, gradientMin, gradientMax, timeString]);
+
+  const initialUniforms = useMemo(() => ({
+    uColor: { value: new THREE.Color(color) },
+    uAlphaTop: { value: alphaTop },
+    uAlphaBottom: { value: alphaBottom },
+    uGradientMin: { value: gradientMin },
+    uGradientMax: { value: gradientMax }
+  }), []); // Only create once
+
+  const clockText = useMemo(() => (
+    <Center key={scale} scale={[scale, scale, 1]}>
+      <Text3D
+        font="https://threejs.org/examples/fonts/helvetiker_bold.typeface.json"
+        size={0.35}
+        height={0}
+        curveSegments={12}
+        bevelEnabled={false}
+      >
+        {timeString}
+        <shaderMaterial 
+          ref={materialRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={initialUniforms}
+          transparent
+          side={THREE.DoubleSide}
+        />
+      </Text3D>
+    </Center>
+  ), [timeString, scale]); // Removed uniforms dependency
 
   return (
     <group position={pos}>
-      <Text
-        position={[0, 0, 0]}
-        fontSize={scale}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-        fontWeight="800"
-        letterSpacing={-0.05}
-        fillOpacity={holographic ? 0.85 : 0.98}
-      >
-        {timeString}
-      </Text>
-      
-      {/* Glow/Bloom fake using a second text layer */}
-      {holographic && (
-        <Text
-          position={[0, 0, -0.05]}
-          fontSize={scale * 1.02}
-          color={color}
-          anchorX="center"
-          anchorY="middle"
-          font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff"
-          fontWeight="800"
-          letterSpacing={-0.05}
-          fillOpacity={0.3}
-          blending={THREE.AdditiveBlending}
-        >
-          {timeString}
-        </Text>
-      )}
+      {clockText}
     </group>
   );
 };
