@@ -1,5 +1,7 @@
 # Fluid Sphere Wallpaper
 
+![Demo](public/demo.png)
+
 This project recreates a fluid, swirling sphere wallpaper using Vite, React, and Three.js (via React Three Fiber).
 
 ## Features

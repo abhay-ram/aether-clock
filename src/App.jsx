@@ -46,6 +46,14 @@ function App() {
   const [clockY, setClockY] = useState(savedSettings?.clockY ?? 1.6);
   const [clockScale, setClockScale] = useState(savedSettings?.clockScale ?? 2.2);
   const [clockColor, setClockColor] = useState(savedSettings?.clockColor ?? '#ffffff');
+  const [clockHolographic, setClockHolographic] = useState(savedSettings?.clockHolographic ?? true);
+  const [showSeconds, setShowSeconds] = useState(savedSettings?.showSeconds ?? false);
+  const [showHint, setShowHint] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHint(false), 15000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSave = (currentPalette) => {
     const settings = {
@@ -57,7 +65,9 @@ function App() {
       rotationSpeedY,
       clockY,
       clockScale,
-      clockColor
+      clockColor,
+      clockHolographic,
+      showSeconds
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     alert('Settings saved to local storage!');
@@ -68,6 +78,7 @@ function App() {
       // toggle menu with `c` key or Ctrl+K
       if(e.key === 'c' || (e.ctrlKey && e.key.toLowerCase() === 'k')){
         setMenuOpen(prev=>!prev);
+        setShowHint(false);
       }
     }
     window.addEventListener('keydown', onKey);
@@ -76,9 +87,24 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000000' }}>
+      <div style={{
+        position: 'absolute', top: 20, left: 20, zIndex: 10,
+        color: 'rgba(255,255,255,0.6)', fontFamily: 'sans-serif', fontSize: 14,
+        background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: 6,
+        backdropFilter: 'blur(4px)', pointerEvents: 'none',
+        opacity: showHint ? 1 : 0, transition: 'opacity 1s ease-out'
+      }}>
+        Press <b>C</b> to customize
+      </div>
       <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
         <color attach="background" args={['#000000']} />
-        <Clock y={clockY} scale={clockScale} color={clockColor} />
+        <Clock 
+          y={clockY} 
+          scale={clockScale} 
+          color={clockColor} 
+          holographic={clockHolographic} 
+          showSeconds={showSeconds}
+        />
         <FluidSphere 
           position={[0, sphereY, 0]} 
           scale={sphereScale} 
@@ -111,6 +137,10 @@ function App() {
         setClockScale={setClockScale}
         clockColor={clockColor}
         setClockColor={setClockColor}
+        clockHolographic={clockHolographic}
+        setClockHolographic={setClockHolographic}
+        showSeconds={showSeconds}
+        setShowSeconds={setShowSeconds}
       />
     </div>
   );

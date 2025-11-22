@@ -5,7 +5,8 @@ export default function ColorMenu({
   open, onClose, currentPalette, onApply, onSave, 
   sphereY, setSphereY, sphereScale, setSphereScale,
   rotationEnabled, setRotationEnabled, rotationSpeedX, setRotationSpeedX, rotationSpeedY, setRotationSpeedY,
-  clockY, setClockY, clockScale, setClockScale, clockColor, setClockColor
+  clockY, setClockY, clockScale, setClockScale, clockColor, setClockColor, clockHolographic, setClockHolographic,
+  showSeconds, setShowSeconds
 }){
   const [base, setBase] = useState('#2b6ef6');
   const [palette, setPalette] = useState({});
@@ -64,7 +65,7 @@ export default function ColorMenu({
 
   return (
     <div style={{
-      position:'fixed', right:20, top:20, width:340, 
+      position:'fixed', right:20, top:20, width:340, maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
       background:'rgba(15,15,20,0.95)', color:'#eee', 
       padding:16, borderRadius:12, zIndex:9999, 
       fontFamily:'Inter, system-ui, sans-serif',
@@ -182,6 +183,24 @@ export default function ColorMenu({
             />
           </div>
         </div>
+        <div style={{marginTop:12, display:'flex', alignItems:'center', gap:10}}>
+          <input 
+            type="checkbox" 
+            checked={clockHolographic} 
+            onChange={e=>setClockHolographic(e.target.checked)}
+            style={{width:16, height:16, accentColor: base}}
+          />
+          <span style={{fontSize:13}}>Holographic Glow</span>
+        </div>
+        <div style={{marginTop:8, display:'flex', alignItems:'center', gap:10}}>
+          <input 
+            type="checkbox" 
+            checked={showSeconds} 
+            onChange={e=>setShowSeconds(e.target.checked)}
+            style={{width:16, height:16, accentColor: base}}
+          />
+          <span style={{fontSize:13}}>Show Seconds</span>
+        </div>
       </div>
 
       <div style={{marginBottom:20}}>
@@ -243,7 +262,7 @@ export default function ColorMenu({
         <button 
           onClick={()=> onSave(palette)} 
           style={{
-            flex: 1, padding:12, borderRadius:8, border:0, 
+            flex: 1, padding:12, borderRadius:8, 
             background: '#333', color: '#fff',
             fontWeight:600, cursor:'pointer', fontSize:14,
             border: '1px solid #444'
